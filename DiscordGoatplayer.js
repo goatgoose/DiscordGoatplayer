@@ -45,7 +45,7 @@ client.on('message', function(message) {
 
 function playNext() {
     if (playlist.length > 0) {
-        var stream = ytdl(playlist.pop(), { filter : 'audioonly' });
+        var stream = ytdl(playlist.pop(), { filter : 'audioonly', highWaterMark: 32768 });
         dispatcher = audioConnection.playStream(stream);
         dispatcher.setVolume(1);
         dispatcher.on('end', function() {
