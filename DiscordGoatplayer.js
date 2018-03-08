@@ -11,6 +11,7 @@ var audioConnection;
 var playlist = [];
 var dispatcher = -1;
 var voiceChannel = -1;
+var repeat = false;
 
 client.on('ready', function() {
     console.log('discord app init');
@@ -26,35 +27,43 @@ client.on('ready', function() {
 });
 
 client.on('message', function(message) {
-    var msgArray = message.content.split(' ');
-    var command = msgArray[0];
-    if (command === "!add") {
-        if (msgArray.length > 0) {
-            playlist.push(msgArray[1]);
-            if (dispatcher === -1) {
-                voiceChannel.join().then(function(connection) {
-                    audioConnection = connection;
-                    playNext();
-                });
+    if (!message.author.bot) {
+        var msgArray = message.content.split(' ');
+        var command = msgArray[0];
+        if (command === "!add") {
+            if (msgArray.length > 0) {
+                playlist.push(msgArray[1]);
+                if (dispatcher === -1) {
+                    voiceChannel.join().then(function (connection) {
+                        audioConnection = connection;
+                        playNext();
+                    });
+                }
             }
-        }
-    } else if (command === "!skip") {
-        if (dispatcher !== -1) {
-            dispatcher.end();
+        } else if (command === "!skip") {
+            if (dispatcher !== -1) {
+                dispatcher.end();
+            }
+        } else if (command === "!repeat") {
+            repeat = !repeat;
+            message.channel.sendMessage("repeat: " + repeat);
         }
     }
 });
 
 function playNext() {
     if (playlist.length > 0) {
-        var stream = ytdl(playlist.pop(), { filter : 'audioonly', highWaterMark: 32768 });
+        var nextLink = playlist.pop();
+        var stream = ytdl(nextLink, { filter : 'audioonly', highWaterMark: 32768 });
         dispatcher = audioConnection.playStream(stream);
         dispatcher.setVolume(1);
         dispatcher.on('end', function() {
+            if (repeat) {
+                playlist.push(nextLink);
+            }
             playNext();
         });
     } else {
-        console.log("dispatcher = -1");
         dispatcher = -1;
         voiceChannel.leave();
     }
