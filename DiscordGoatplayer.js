@@ -10,6 +10,7 @@ var audioConnection;
 
 var playlist = [];
 var dispatcher = -1;
+var voiceChannel = -1;
 
 client.on('ready', function() {
     console.log('discord app init');
@@ -18,9 +19,7 @@ client.on('ready', function() {
     for (var i in channels) {
         var channel = channels[i];
         if (channel.type === 'voice') {
-            channel.join().then(function(connection) {
-                audioConnection = connection;
-            });
+            voiceChannel = channel;
             break;
         }
     }
@@ -33,7 +32,10 @@ client.on('message', function(message) {
         if (msgArray.length > 0) {
             playlist.push(msgArray[1]);
             if (dispatcher === -1) {
-                playNext();
+                voiceChannel.join().then(function(connection) {
+                    audioConnection = connection;
+                    playNext();
+                });
             }
         }
     } else if (command === "!skip") {
@@ -52,6 +54,8 @@ function playNext() {
             playNext();
         });
     } else {
+        console.log("dispatcher = -1");
         dispatcher = -1;
+        voiceChannel.leave();
     }
 }
